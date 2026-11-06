@@ -1,4 +1,18 @@
 import mongoose from 'mongoose';
+import dns from 'node:dns';
+
+// In development, configure public DNS resolvers (Google DNS) to reliably resolve MongoDB Atlas SRV records
+// when local ISP/IPv6 resolvers fail on SRV lookups. Bypassed in production to use cloud provider DNS.
+if (process.env.NODE_ENV !== 'production') {
+  const customDns = process.env.DNS_SERVERS
+    ? process.env.DNS_SERVERS.split(',').map((s) => s.trim())
+    : ['8.8.8.8', '8.8.4.4'];
+  try {
+    dns.setServers(customDns);
+  } catch (err) {
+    console.warn(`[MongoDB] DNS configuration warning: ${err.message}`);
+  }
+}
 
 /**
  * Connect to MongoDB database using Mongoose
