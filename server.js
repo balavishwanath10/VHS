@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 import errorHandler from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/api', healthRouter);
+app.use('/api/auth', authRouter);
 
 // Frontend Integration: Vite middleware in development, static build in production
 if (!isProduction) {
