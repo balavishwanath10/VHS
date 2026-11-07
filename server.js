@@ -7,8 +7,12 @@ import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import errorHandler from './middleware/errorHandler.js';
+import { validateEnvOrExit } from './config/validateEnv.js';
 
 dotenv.config();
+
+// Validate JWT security configuration before opening HTTP listener
+validateEnvOrExit();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

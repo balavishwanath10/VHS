@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { validateEnv } from '../config/validateEnv.js';
 
 /**
  * Authentication middleware: verifies Bearer JWT and attaches authenticated user
@@ -21,15 +22,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET;
-    if (!secret || secret === 'replace_with_a_secure_random_secret') {
-      return res.status(500).json({
-        error: {
-          message: 'Server configuration error: JWT_SECRET is not set',
-        },
-      });
-    }
-
+    const { secret } = validateEnv();
     const decoded = jwt.verify(token, secret);
 
     const user = await User.findById(decoded.id);

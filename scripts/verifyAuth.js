@@ -535,7 +535,7 @@ async function runAuthTests() {
   console.log(`TEST SUMMARY: ${results.filter((r) => r.status === 'PASS').length}/${results.length} PASSED`);
   console.log(`==================================================\n`);
 
-  const hasFailures = results.some((r) => r.status === 'FAIL');
+  const hasFailures = results.length === 0 || results.some((r) => r.status === 'FAIL');
   process.exitCode = hasFailures ? 1 : 0;
 }
 
