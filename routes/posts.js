@@ -247,7 +247,12 @@ router.get('/mine', protect, async (req, res, next) => {
  */
 router.get('/:slug', async (req, res, next) => {
   try {
-    const post = await Post.findOne({ slug: req.params.slug })
+    const identifier = req.params.slug;
+    const query = mongoose.Types.ObjectId.isValid(identifier)
+      ? { $or: [{ slug: identifier }, { _id: identifier }] }
+      : { slug: identifier };
+
+    const post = await Post.findOne(query)
       .populate('author', 'name email avatarUrl bio')
       .populate('tags', 'name slug');
 

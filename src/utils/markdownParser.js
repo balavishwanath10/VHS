@@ -26,6 +26,19 @@ export const sanitizeUrl = (url) => {
 };
 
 /**
+ * Validates whether a string is a well-formed http or https URL.
+ */
+export const isValidHttpUrl = (str) => {
+  if (!str || typeof str !== 'string') return false;
+  try {
+    const parsed = new URL(str.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+};
+
+/**
  * Tokenizes a line of code into syntax highlighted tokens.
  */
 export const tokenizeCodeLine = (line) => {
