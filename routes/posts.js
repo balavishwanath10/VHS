@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import Post from '../models/Post.js';
 import Tag from '../models/Tag.js';
 import protect from '../middleware/auth.js';
-import { generateUniqueSlug, generateExcerpt } from '../utils/postHelpers.js';
+import { generateUniqueSlug, generateExcerpt, isValidUrl } from '../utils/postHelpers.js';
 
 const router = Router();
 
@@ -97,8 +97,18 @@ router.post('/', protect, async (req, res, next) => {
     // Generate excerpt from markdown content (max 250 characters)
     const excerpt = generateExcerpt(content, 250);
 
-    // Clean cover image
-    const cleanCoverImage = typeof coverImage === 'string' ? coverImage.trim() : '';
+    // Validate cover image if provided
+    let cleanCoverImage = '';
+    if (coverImage !== undefined && coverImage !== null && coverImage !== '') {
+      if (typeof coverImage !== 'string' || !isValidUrl(coverImage)) {
+        return res.status(400).json({
+          error: {
+            message: 'Cover image must be a valid URL',
+          },
+        });
+      }
+      cleanCoverImage = coverImage.trim();
+    }
 
     // Create post
     let post;

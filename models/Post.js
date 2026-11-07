@@ -26,6 +26,18 @@ const postSchema = new mongoose.Schema(
     coverImage: {
       type: String,
       default: '',
+      validate: {
+        validator: function (v) {
+          if (!v) return true; // Optional field, empty string is valid
+          try {
+            const parsed = new URL(v);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+          } catch {
+            return false;
+          }
+        },
+        message: 'Cover image must be a valid URL',
+      },
     },
     status: {
       type: String,

@@ -108,3 +108,20 @@ export const generateExcerpt = (content, maxLength = 250) => {
 
   return truncated.trim();
 };
+
+/**
+ * Validates whether a string is a well-formed HTTP or HTTPS URL
+ * @param {string} urlString - URL string to validate
+ * @returns {boolean} - True if valid HTTP/HTTPS URL, false otherwise
+ */
+export const isValidUrl = (urlString) => {
+  if (!urlString || typeof urlString !== 'string') {
+    return false;
+  }
+  try {
+    const parsed = new URL(urlString.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};

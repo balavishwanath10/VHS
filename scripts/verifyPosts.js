@@ -11,7 +11,7 @@ import Post from '../models/Post.js';
 import Tag from '../models/Tag.js';
 import postsRouter from '../routes/posts.js';
 import errorHandler from '../middleware/errorHandler.js';
-import { slugify, generateUniqueSlug, generateExcerpt } from '../utils/postHelpers.js';
+import { slugify, generateUniqueSlug, generateExcerpt, isValidUrl } from '../utils/postHelpers.js';
 import { validateEnv } from '../config/validateEnv.js';
 
 const results = [];
@@ -24,6 +24,11 @@ const recordPass = (testName, details) => {
 const recordFail = (testName, error) => {
   results.push({ name: testName, status: 'FAIL', details: error.message });
   console.error(`[FAIL] ${testName}: ${error.message}`);
+};
+
+const recordBlocked = (testName, reason) => {
+  results.push({ name: testName, status: 'BLOCKED', details: reason });
+  console.log(`[BLOCKED] ${testName}: ${reason}`);
 };
 
 async function runPostsVerification() {
@@ -122,6 +127,28 @@ Here is \`inline code\` and ~~strikethrough~~ text.
     recordFail('Helper - Excerpt Max Length Enforcement', err);
   }
 
+  // 7. Cover Image URL Validation Helper - Valid URLs
+  try {
+    assert.strictEqual(isValidUrl('https://example.com/banner.png'), true);
+    assert.strictEqual(isValidUrl('http://cdn.hashnode.com/image.jpg'), true);
+    recordPass('Helper - Valid Cover Image URL Detection', 'HTTPS and HTTP image URLs correctly validated');
+  } catch (err) {
+    recordFail('Helper - Valid Cover Image URL Detection', err);
+  }
+
+  // 8. Cover Image URL Validation Helper - Invalid URLs
+  try {
+    assert.strictEqual(isValidUrl('not-a-url'), false);
+    assert.strictEqual(isValidUrl('ftp://example.com/banner.png'), false);
+    assert.strictEqual(isValidUrl('javascript:alert(1)'), false);
+    assert.strictEqual(isValidUrl(''), false);
+    assert.strictEqual(isValidUrl(null), false);
+    assert.strictEqual(isValidUrl(undefined), false);
+    recordPass('Helper - Invalid Cover Image URL Detection', 'Malformed URLs, non-HTTP schemes, and empty inputs rejected');
+  } catch (err) {
+    recordFail('Helper - Invalid Cover Image URL Detection', err);
+  }
+
   // ----------------------------------------------------
   // SECTION 2: HTTP ENDPOINT AUTH & VALIDATION TESTS
   // ----------------------------------------------------
@@ -145,7 +172,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       });
     });
 
-    // 7. Reject unauthenticated request (401 No Token)
+    // 9. Reject unauthenticated request (401 No Token)
     try {
       await axios.post(baseURL, { title: 'Test', content: 'Test content' });
       recordFail('Endpoint - Unauthenticated 401 Rejection', new Error('Should have returned 401'));
@@ -155,7 +182,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Endpoint - Unauthenticated 401 Rejection', 'HTTP 401 returned when no Bearer token is provided');
     }
 
-    // 8. Reject invalid Bearer token (401 Invalid Token)
+    // 10. Reject invalid Bearer token (401 Invalid Token)
     try {
       await axios.post(baseURL, { title: 'Test', content: 'Test content' }, {
         headers: { Authorization: 'Bearer invalid.token.payload' },
@@ -170,7 +197,6 @@ Here is \`inline code\` and ~~strikethrough~~ text.
     // Prepare a mock authenticated app to verify route input validations without requiring DB token lookup
     const authApp = express();
     authApp.use(express.json());
-    // Attach simulated authenticated user
     const mockUser = {
       _id: new mongoose.Types.ObjectId(),
       name: 'Test Author',
@@ -181,10 +207,9 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       req.user = mockUser;
       next();
     });
-    // Mount custom test routes that bypass protect middleware to test posts controller input validations
+    // Mount custom test routes that replicate posts controller input validations
     authApp.post('/api/posts-test', async (req, res, next) => {
-      // Re-use posts controller validation logic
-      const { title, content, tags, status } = req.body;
+      const { title, content, tags, status, coverImage } = req.body;
       if (!title || typeof title !== 'string' || !title.trim()) {
         return res.status(400).json({ error: { message: 'Title is required' } });
       }
@@ -194,6 +219,11 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       if (status !== undefined && status !== null && status !== '') {
         if (status !== 'draft' && status !== 'published') {
           return res.status(400).json({ error: { message: 'Status must be either draft or published' } });
+        }
+      }
+      if (coverImage !== undefined && coverImage !== null && coverImage !== '') {
+        if (typeof coverImage !== 'string' || !isValidUrl(coverImage)) {
+          return res.status(400).json({ error: { message: 'Cover image must be a valid URL' } });
         }
       }
       if (tags !== undefined && tags !== null) {
@@ -220,7 +250,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       });
     });
 
-    // 9. Reject missing title (400)
+    // 11. Reject missing title (400)
     try {
       await axios.post(authBaseURL, { content: 'Valid markdown content' });
       recordFail('Validation - Missing Title Rejection', new Error('Should have returned 400'));
@@ -230,7 +260,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Validation - Missing Title Rejection', 'HTTP 400 returned when title is absent or whitespace');
     }
 
-    // 10. Reject missing content (400)
+    // 12. Reject missing content (400)
     try {
       await axios.post(authBaseURL, { title: 'Valid Post Title' });
       recordFail('Validation - Missing Content Rejection', new Error('Should have returned 400'));
@@ -240,7 +270,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Validation - Missing Content Rejection', 'HTTP 400 returned when content is absent or empty');
     }
 
-    // 11. Reject invalid status (400)
+    // 13. Reject invalid status (400)
     try {
       await axios.post(authBaseURL, {
         title: 'Valid Title',
@@ -254,7 +284,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Validation - Invalid Status Rejection', 'HTTP 400 returned when status is not draft or published');
     }
 
-    // 12. Reject invalid tags format (400)
+    // 14. Reject invalid tags format (400)
     try {
       await axios.post(authBaseURL, {
         title: 'Valid Title',
@@ -268,7 +298,7 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Validation - Non-Array Tags Rejection', 'HTTP 400 returned when tags is not an array');
     }
 
-    // 13. Reject invalid ObjectId in tags array (400)
+    // 15. Reject invalid ObjectId in tags array (400)
     try {
       await axios.post(authBaseURL, {
         title: 'Valid Title',
@@ -282,107 +312,215 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       recordPass('Validation - Malformed Tag ObjectId Rejection', 'HTTP 400 returned on malformed tag ObjectId');
     }
 
+    // 16. Reject arbitrary non-URL string in coverImage (400)
+    try {
+      await axios.post(authBaseURL, {
+        title: 'Valid Title',
+        content: 'Valid content',
+        coverImage: 'arbitrary-non-url-string',
+      });
+      recordFail('Validation - Non-URL Cover Image Rejection', new Error('Should have returned 400'));
+    } catch (err) {
+      assert.strictEqual(err.response?.status, 400);
+      assert.strictEqual(err.response?.data?.error?.message, 'Cover image must be a valid URL');
+      recordPass('Validation - Non-URL Cover Image Rejection', 'HTTP 400 returned when coverImage is not a valid URL');
+    }
+
+    // 17. Accept valid HTTP/HTTPS URL in coverImage (200)
+    try {
+      const validRes = await axios.post(authBaseURL, {
+        title: 'Valid Title',
+        content: 'Valid content',
+        coverImage: 'https://images.unsplash.com/photo-12345.jpg',
+      });
+      assert.strictEqual(validRes.status, 200);
+      recordPass('Validation - Valid Cover Image URL Acceptance', 'HTTP 200 returned when coverImage is a valid URL');
+    } catch (err) {
+      recordFail('Validation - Valid Cover Image URL Acceptance', err);
+    }
+
     if (authServer) {
       await new Promise((resolve) => authServer.close(resolve));
     }
 
     // ----------------------------------------------------
-    // SECTION 3: DATABASE INTEGRATION TESTS
+    // SECTION 3: LIVE DATABASE INTEGRATION TESTS
     // ----------------------------------------------------
     console.log(`\n--- SECTION 3: DATABASE INTEGRATION TESTS ---`);
     let dbConnected = false;
+    let dbConnectionError = null;
 
-    if (process.env.TEST_LIVE_DB === 'true') {
+    if (process.env.TEST_LIVE_DB?.trim() === 'true') {
       try {
         await connectDB();
         dbConnected = true;
-        console.log('[Setup] Connected to MongoDB Atlas. Executing live database integration tests...');
+        console.log('[Setup] Connected to MongoDB Atlas. Executing live database integration tests...\n');
       } catch (dbErr) {
-        console.log(`[INFO] Live Atlas connection failed (${dbErr.message}).`);
+        dbConnectionError = dbErr.message;
+        console.log(`[INFO] Live Atlas connection failed: ${dbErr.message}\n`);
       }
     } else {
-      console.log('[INFO] Skipping live Atlas DB network calls (enable via TEST_LIVE_DB=true when IP Access List is configured).');
+      dbConnectionError = 'TEST_LIVE_DB is not enabled (set TEST_LIVE_DB=true to run live integration tests)';
+      console.log(`[INFO] ${dbConnectionError}\n`);
     }
 
     if (dbConnected) {
-      // Create test user and tags for full end-to-end integration
-      const testUser = await User.create({
-        name: 'Post Tester',
-        email: `posttester_${Date.now()}@example.com`,
-        password: 'Password123!',
-      });
-      const testTag = await Tag.create({
-        name: `testtag_${Date.now()}`,
-        slug: `testtag-${Date.now()}`,
-      });
+      let testUser;
+      let testTag;
+      try {
+        testUser = await User.create({
+          name: 'Live Post Tester',
+          email: `livepost_${Date.now()}@example.com`,
+          password: 'Password123!',
+        });
+        testTag = await Tag.create({
+          name: `livetag_${Date.now()}`,
+          slug: `livetag-${Date.now()}`,
+        });
 
-      const token = jwt.sign({ id: testUser._id }, validateEnv().secret, { expiresIn: '1h' });
+        const token = jwt.sign({ id: testUser._id }, validateEnv().secret, { expiresIn: '1h' });
+        const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
-      // 14. Live Creation: Draft status by default
-      const draftRes = await axios.post(
-        baseURL,
-        {
-          title: 'Testing Draft Default',
-          content: 'This is test content with *markdown* formatting.',
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      assert.strictEqual(draftRes.status, 201);
-      assert.strictEqual(draftRes.data.post.status, 'draft');
-      assert.strictEqual(draftRes.data.post.slug, 'testing-draft-default');
-      assert.strictEqual(draftRes.data.post.author._id.toString(), testUser._id.toString());
-      recordPass('Integration - Default Draft Post Creation', 'Draft post created with correct slug and author');
+        // 18. Live Creation: Authenticated draft post
+        const draftRes = await axios.post(
+          baseURL,
+          {
+            title: 'Live Testing Draft Post',
+            content: 'This is live draft content with **markdown**.',
+          },
+          authHeaders
+        );
+        assert.strictEqual(draftRes.status, 201);
+        assert.strictEqual(draftRes.data.post.status, 'draft');
+        recordPass('Live DB - Authenticated Draft Post Creation', 'Draft post created in live database');
 
-      // 15. Live Creation: Published status and Tag association
-      const publishedRes = await axios.post(
-        baseURL,
-        {
-          title: 'Testing Published Post',
-          content: 'This is published content.',
-          status: 'published',
-          tags: [testTag._id],
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      assert.strictEqual(publishedRes.status, 201);
-      assert.strictEqual(publishedRes.data.post.status, 'published');
-      assert.strictEqual(publishedRes.data.post.tags.length, 1);
-      assert.strictEqual(publishedRes.data.post.tags[0].name, testTag.name);
-      recordPass('Integration - Published Post with Tags', 'Published post created with populated tags');
+        // 19. Live Creation: Authenticated published post
+        const publishedRes = await axios.post(
+          baseURL,
+          {
+            title: 'Live Testing Published Post',
+            content: 'This is live published content.',
+            status: 'published',
+            tags: [testTag._id],
+            coverImage: 'https://example.com/banner.png',
+          },
+          authHeaders
+        );
+        assert.strictEqual(publishedRes.status, 201);
+        assert.strictEqual(publishedRes.data.post.status, 'published');
+        recordPass('Live DB - Authenticated Published Post Creation', 'Published post created in live database');
 
-      // 16. Live Creation: Author Spoofing Prevention
-      const spoofAttemptRes = await axios.post(
-        baseURL,
-        {
-          title: 'Testing Author Spoof Prevention',
-          content: 'Attempting to spoof author.',
-          author: new mongoose.Types.ObjectId(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      assert.strictEqual(spoofAttemptRes.data.post.author._id.toString(), testUser._id.toString());
-      recordPass('Integration - Author Spoofing Prevention', 'Post author was strictly bound to authenticated user');
+        // 20. Live Author: Verify author is the authenticated user
+        assert.strictEqual(draftRes.data.post.author._id.toString(), testUser._id.toString());
+        recordPass('Live DB - Author Assignment', 'Post author is correctly assigned to authenticated user');
 
-      // Cleanup
-      await Post.deleteMany({ author: testUser._id });
-      await User.findByIdAndDelete(testUser._id);
-      await Tag.findByIdAndDelete(testTag._id);
-      await mongoose.disconnect();
+        // 21. Live Author: Verify author spoofing is prevented
+        const spoofRes = await axios.post(
+          baseURL,
+          {
+            title: 'Live Spoof Attempt',
+            content: 'Content attempting author spoof.',
+            author: new mongoose.Types.ObjectId(),
+          },
+          authHeaders
+        );
+        assert.strictEqual(spoofRes.data.post.author._id.toString(), testUser._id.toString());
+        recordPass('Live DB - Author Spoofing Prevention', 'Body author ignored; strictly bound to authenticated user');
+
+        // 22. Live Tags: Verify valid tags are stored
+        assert.strictEqual(publishedRes.data.post.tags.length, 1);
+        assert.strictEqual(publishedRes.data.post.tags[0]._id.toString(), testTag._id.toString());
+        recordPass('Live DB - Valid Tag Association', 'Valid tag successfully associated and populated');
+
+        // 23. Live Tags: Verify nonexistent tags are rejected (400)
+        try {
+          const fakeTagId = new mongoose.Types.ObjectId();
+          await axios.post(
+            baseURL,
+            {
+              title: 'Invalid Tag Post',
+              content: 'Content with nonexistent tag',
+              tags: [fakeTagId],
+            },
+            authHeaders
+          );
+          recordFail('Live DB - Nonexistent Tag Rejection', new Error('Should have rejected non-existent tag'));
+        } catch (tagErr) {
+          assert.strictEqual(tagErr.response?.status, 400);
+          assert.strictEqual(tagErr.response?.data?.error?.message, 'One or more specified tags do not exist');
+          recordPass('Live DB - Nonexistent Tag Rejection', 'HTTP 400 returned when tag does not exist');
+        }
+
+        // 24. Live Status: Verify default status is draft
+        const defaultStatusRes = await axios.post(
+          baseURL,
+          {
+            title: 'Live Status Default Test',
+            content: 'Content without status specified.',
+          },
+          authHeaders
+        );
+        assert.strictEqual(defaultStatusRes.data.post.status, 'draft');
+        recordPass('Live DB - Draft Default Status', 'Unspecified status defaults to draft');
+
+        // 25. Live Slugs: Verify generated slugs are unique
+        const dupTitle1 = await axios.post(
+          baseURL,
+          {
+            title: 'Live Duplicate Slug Test',
+            content: 'Content 1',
+          },
+          authHeaders
+        );
+        const dupTitle2 = await axios.post(
+          baseURL,
+          {
+            title: 'Live Duplicate Slug Test',
+            content: 'Content 2',
+          },
+          authHeaders
+        );
+        assert.strictEqual(dupTitle1.data.post.slug, 'live-duplicate-slug-test');
+        assert.strictEqual(dupTitle2.data.post.slug, 'live-duplicate-slug-test-1');
+        recordPass('Live DB - Unique Slug Collision Resolution', 'Duplicate title handled with unique incremental slug');
+
+        // 26. Live Excerpt: Verify excerpt length is at most 250 characters
+        const longContent = 'Word '.repeat(80); // 400 characters
+        const longExcerptRes = await axios.post(
+          baseURL,
+          {
+            title: 'Live Long Excerpt Test',
+            content: longContent,
+          },
+          authHeaders
+        );
+        assert.ok(longExcerptRes.data.post.excerpt.length <= 250, 'Excerpt must be <= 250 characters');
+        recordPass('Live DB - Excerpt Max Length Enforcement', `Live excerpt length: ${longExcerptRes.data.post.excerpt.length} (<= 250)`);
+
+        // 27. Live Cleanup: Safely clean up created test records
+        await Post.deleteMany({ author: testUser._id });
+        await User.findByIdAndDelete(testUser._id);
+        await Tag.findByIdAndDelete(testTag._id);
+        const remainingPosts = await Post.countDocuments({ author: testUser._id });
+        assert.strictEqual(remainingPosts, 0);
+        recordPass('Live DB - Test Records Cleaned Up Safely', 'All test documents deleted cleanly from database');
+      } finally {
+        try {
+          await mongoose.disconnect();
+        } catch (_) {}
+      }
     } else {
-      // 14. Author Spoofing Prevention Contract Verification
-      const spoofUser = { _id: 'authentic_author_id_123' };
-      const reqBody = { title: 'Test', author: 'attacker_id_999' };
-      const assignedAuthor = spoofUser._id;
-      assert.strictEqual(assignedAuthor, 'authentic_author_id_123');
-      recordPass('Contract - Author Spoofing Prevention', 'Author is strictly mapped from req.user._id, body.author ignored');
-
-      // 15. Tag Existence Verification Contract
-      recordPass('Contract - Non-existent Tag Rejection', 'Post route queries Tag.find({ _id: { $in: tags } }) and rejects on count mismatch');
-
-      // 16. Draft Default Contract
-      const defaultStatus = undefined || 'draft';
-      assert.strictEqual(defaultStatus, 'draft');
-      recordPass('Contract - Draft Default Status', 'Unspecified status defaults strictly to draft');
+      // Mark all 10 live database tests as BLOCKED due to Atlas IP whitelist
+      recordBlocked('Live DB - Authenticated Draft Post Creation', dbConnectionError);
+      recordBlocked('Live DB - Authenticated Published Post Creation', dbConnectionError);
+      recordBlocked('Live DB - Author Assignment', dbConnectionError);
+      recordBlocked('Live DB - Author Spoofing Prevention', dbConnectionError);
+      recordBlocked('Live DB - Valid Tag Association', dbConnectionError);
+      recordBlocked('Live DB - Nonexistent Tag Rejection', dbConnectionError);
+      recordBlocked('Live DB - Draft Default Status', dbConnectionError);
+      recordBlocked('Live DB - Unique Slug Collision Resolution', dbConnectionError);
+      recordBlocked('Live DB - Excerpt Max Length Enforcement', dbConnectionError);
+      recordBlocked('Live DB - Test Records Cleaned Up Safely', dbConnectionError);
     }
 
   } catch (globalErr) {
@@ -392,17 +530,17 @@ Here is \`inline code\` and ~~strikethrough~~ text.
       await new Promise((resolve) => testServer.close(resolve));
       console.log('[Cleanup] Posts test server closed.');
     }
-    try {
-      await mongoose.disconnect();
-    } catch (_) {}
   }
 
+  const passed = results.filter((r) => r.status === 'PASS').length;
+  const blocked = results.filter((r) => r.status === 'BLOCKED').length;
+  const failed = results.filter((r) => r.status === 'FAIL').length;
+
   console.log(`\n==================================================`);
-  console.log(`TEST SUMMARY: ${results.filter((r) => r.status === 'PASS').length}/${results.length} PASSED`);
+  console.log(`TEST SUMMARY: ${passed} PASSED | ${blocked} BLOCKED | ${failed} FAILED (TOTAL: ${results.length})`);
   console.log(`==================================================\n`);
 
-  const hasFailures = results.length === 0 || results.some((r) => r.status === 'FAIL');
-  process.exit(hasFailures ? 1 : 0);
+  process.exit(failed > 0 ? 1 : 0);
 }
 
 runPostsVerification();
