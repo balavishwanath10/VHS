@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import postsRouter from './routes/posts.js';
+import tagsRouter from './routes/tags.js';
 import errorHandler, { notFound } from './middleware/errorHandler.js';
 import { validateEnvOrExit } from './config/validateEnv.js';
 
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postsRouter);
+app.use('/api/tags', tagsRouter);
 
 // 404 handler for unmatched API routes
 app.all('/api/*', notFound);

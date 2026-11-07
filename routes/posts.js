@@ -157,12 +157,55 @@ router.post('/', protect, async (req, res, next) => {
 
 /**
  * @route   GET /api/posts
- * @desc    Get published posts (public feed), sorted newest first
+ * @desc    Get published posts (public feed, optional search and tag filter), sorted newest first
  * @access  Public
  */
 router.get('/', async (req, res, next) => {
   try {
-    const posts = await Post.find({ status: 'published' })
+    const { search, tag } = req.query;
+
+    const filter = {
+      status: 'published', // Drafts NEVER appear in public feed or search
+    };
+
+    // Keyword search in title and content
+    if (search !== undefined && search !== null && typeof search === 'string') {
+      const trimmedSearch = search.trim();
+      if (trimmedSearch.length > 0) {
+        const escapedKeyword = trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchRegex = new RegExp(escapedKeyword, 'i');
+        filter.$or = [
+          { title: searchRegex },
+          { content: searchRegex },
+        ];
+      }
+    }
+
+    // Optional tag filtering by tag slug or ObjectId
+    if (tag !== undefined && tag !== null && typeof tag === 'string') {
+      const trimmedTag = tag.trim().toLowerCase();
+      if (trimmedTag.length > 0) {
+        let matchingTag;
+        if (mongoose.Types.ObjectId.isValid(trimmedTag)) {
+          matchingTag = await Tag.findOne({
+            $or: [{ _id: trimmedTag }, { slug: trimmedTag }],
+          });
+        } else {
+          matchingTag = await Tag.findOne({ slug: trimmedTag });
+        }
+
+        if (matchingTag) {
+          filter.tags = matchingTag._id;
+        } else {
+          return res.status(200).json({
+            count: 0,
+            posts: [],
+          });
+        }
+      }
+    }
+
+    const posts = await Post.find(filter)
       .sort({ createdAt: -1 })
       .populate('author', 'name email avatarUrl bio')
       .populate('tags', 'name slug');
