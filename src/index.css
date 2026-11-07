@@ -544,3 +544,130 @@ body {
 .text-center {
   text-align: center;
 }
+
+/* Dashboard Styles */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dashboard-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #57606a;
+}
+
+.stats-separator {
+  color: #d0d7de;
+}
+
+.dashboard-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dashboard-post-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.dashboard-card-main {
+  flex: 1;
+}
+
+.dashboard-post-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.badge-draft {
+  background-color: #fff8c5;
+  color: #9a6700;
+  border: 1px solid #d4a72c;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-published {
+  background-color: #dafbe1;
+  color: #1a7f37;
+  border: 1px solid #4ac26b;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.dashboard-post-date {
+  font-size: 0.85rem;
+  color: #57606a;
+}
+
+.dashboard-post-title {
+  margin: 0.35rem 0;
+  font-size: 1.25rem;
+}
+
+.dashboard-post-title a {
+  color: #24292f;
+  text-decoration: none;
+}
+
+.dashboard-post-title a:hover {
+  color: #0969da;
+}
+
+.dashboard-post-excerpt {
+  color: #57606a;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.dashboard-post-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 90px;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.btn-danger {
+  background-color: #cf222e;
+  color: #ffffff;
+  border: 1px solid #a40e26;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-danger:hover {
+  background-color: #b62324;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empty-dashboard {
+  padding: 3rem 1.5rem;
+}
