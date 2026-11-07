@@ -12,6 +12,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -23,12 +27,112 @@ body {
   width: 100%;
 }
 
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
 }
 
+/* Navbar */
+.navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #d0d7de;
+  padding: 0.75rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0969da;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-link {
+  color: #57606a;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #24292f;
+  background-color: #f3f4f6;
+}
+
+.nav-btn-primary {
+  background-color: #2da44e;
+  color: #ffffff !important;
+}
+
+.nav-btn-primary:hover {
+  background-color: #2c974b;
+}
+
+.nav-btn-logout {
+  background: none;
+  border: 1px solid #d0d7de;
+  cursor: pointer;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.nav-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.nav-user-initial {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #0969da;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+/* Cards & Layout */
 .card {
   background: #ffffff;
   border-radius: 8px;
@@ -38,34 +142,129 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.badge {
+.auth-container {
+  max-width: 440px;
+  margin-top: 2rem;
+}
+
+.auth-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: #57606a;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #24292f;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2);
+}
+
+.btn {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: #2da44e;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #2c974b;
+}
+
+.btn-block {
+  width: 100%;
+  display: block;
+  padding: 0.65rem;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.alert-error {
+  background-color: #ffebe9;
+  border: 1px solid #ff8182;
+  color: #cf222e;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #57606a;
+  margin-top: 1.5rem;
+}
+
+.auth-footer a {
+  color: #0969da;
+  text-decoration: none;
   font-weight: 600;
 }
 
-.badge-success {
-  background-color: #dafbe1;
-  color: #1a7f37;
+/* Posts */
+.post-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
 }
 
-.badge-warning {
-  background-color: #fff8c5;
-  color: #9a6700;
-}
-
-.badge-info {
-  background-color: #ddf4ff;
+.post-card h2 a {
   color: #0969da;
+  text-decoration: none;
 }
 
-pre {
-  background-color: #f6f8fa;
-  border: 1px solid #e1e4e8;
-  border-radius: 6px;
-  padding: 1rem;
-  overflow-x: auto;
-  font-size: 0.875rem;
+.post-card h2 a:hover {
+  text-decoration: underline;
+}
+
+.post-excerpt {
+  color: #57606a;
+  margin-bottom: 0.75rem;
+}
+
+.post-meta {
+  font-size: 0.85rem;
+  color: #8c959f;
 }

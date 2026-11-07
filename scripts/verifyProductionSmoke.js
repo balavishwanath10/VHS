@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -8,6 +9,7 @@ import cors from 'cors';
 import healthRouter from '../routes/health.js';
 import authRouter from '../routes/auth.js';
 import postsRouter from '../routes/posts.js';
+import tagsRouter from '../routes/tags.js';
 import errorHandler, { notFound } from '../middleware/errorHandler.js';
 import { validateEnvOrExit } from '../config/validateEnv.js';
 
@@ -33,6 +35,7 @@ async function runProductionSmokeTest() {
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/posts', postsRouter);
+  app.use('/api/tags', tagsRouter);
 
   // 404 handler for unmatched API routes
   app.all('/api/*', notFound);
@@ -70,18 +73,19 @@ async function runProductionSmokeTest() {
     console.log('[PASS] Production Smoke - Root index.html served successfully (HTTP 200)');
 
     // 2. Frontend static assets load: JavaScript bundle
-    const jsAssetPath = '/assets/index-CzV0HXxx.js';
-    const jsRes = await axios.get(`${baseURL}${jsAssetPath}`);
+    const assetFiles = fs.readdirSync(path.resolve(distPath, 'assets'));
+    const jsFileName = assetFiles.find((f) => f.endsWith('.js'));
+    const jsRes = await axios.get(`${baseURL}/assets/${jsFileName}`);
     assert.strictEqual(jsRes.status, 200);
     assert.ok(jsRes.headers['content-type'].includes('javascript'));
-    console.log(`[PASS] Production Smoke - Static JS bundle served successfully (HTTP 200, Content-Type: ${jsRes.headers['content-type']})`);
+    console.log(`[PASS] Production Smoke - Static JS bundle served successfully (HTTP 200, File: ${jsFileName})`);
 
     // 3. Frontend static assets load: CSS stylesheet
-    const cssAssetPath = '/assets/index-CuVyq5n3.css';
-    const cssRes = await axios.get(`${baseURL}${cssAssetPath}`);
+    const cssFileName = assetFiles.find((f) => f.endsWith('.css'));
+    const cssRes = await axios.get(`${baseURL}/assets/${cssFileName}`);
     assert.strictEqual(cssRes.status, 200);
     assert.ok(cssRes.headers['content-type'].includes('css'));
-    console.log(`[PASS] Production Smoke - Static CSS bundle served successfully (HTTP 200, Content-Type: ${cssRes.headers['content-type']})`);
+    console.log(`[PASS] Production Smoke - Static CSS bundle served successfully (HTTP 200, File: ${cssFileName})`);
 
     // 4. SPA Route Fallback: Client-side routing path returns index.html
     const spaRes = await axios.get(`${baseURL}/explore/developer-stories/react-2026`);

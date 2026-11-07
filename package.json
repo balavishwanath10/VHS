@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "build": "vite build",
     "start": "node server.js",
-    "test": "node scripts/verifyModels.js && node scripts/verifyAuth.js && node scripts/verifyJwtConfig.js && node scripts/verifyErrorHandling.js && node scripts/verifyPosts.js && node scripts/verifyDay7Posts.js && node scripts/verifyDay8TagsAndSearch.js",
+    "test": "node scripts/verifyModels.js && node scripts/verifyAuth.js && node scripts/verifyJwtConfig.js && node scripts/verifyErrorHandling.js && node scripts/verifyPosts.js && node scripts/verifyDay7Posts.js && node scripts/verifyDay8TagsAndSearch.js && node scripts/verifyDay9Frontend.js",
     "smoke": "node scripts/verifyProductionSmoke.js"
   },
   "keywords": [
