@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import postsRouter from './routes/posts.js';
 import errorHandler, { notFound } from './middleware/errorHandler.js';
 import { validateEnvOrExit } from './config/validateEnv.js';
 
@@ -28,6 +29,7 @@ app.use(express.json());
 // API Routes
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/posts', postsRouter);
 
 // 404 handler for unmatched API routes
 app.all('/api/*', notFound);
