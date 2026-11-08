@@ -27,7 +27,10 @@ export const Navbar = () => {
               <Link to="/dashboard" className="nav-link">
                 Dashboard
               </Link>
-              <div className="nav-user">
+              <Link to="/settings" className="nav-link">
+                Settings
+              </Link>
+              <Link to={`/profile/${user?._id || user?.id}`} className="nav-user" title="View Profile">
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt={user.name} className="nav-avatar" />
                 ) : (
@@ -36,7 +39,7 @@ export const Navbar = () => {
                   </span>
                 )}
                 <span className="nav-username">{user?.name}</span>
-              </div>
+              </Link>
               <button onClick={handleLogout} className="nav-link nav-btn-logout">
                 Log Out
               </button>
