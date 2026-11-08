@@ -10,14 +10,19 @@
 export const sanitizeUrl = (url) => {
   if (!url || typeof url !== 'string') return '#';
   const trimmed = url.trim();
-  const lower = trimmed.toLowerCase();
+  // Strip control characters, null bytes, and non-printable characters for scheme inspection
+  const stripped = trimmed.replace(/[\u0000-\u001F\u007F-\u009F\s]/g, '');
+  const lower = stripped.toLowerCase();
 
   // Block dangerous schemes
   if (
     lower.startsWith('javascript:') ||
     lower.startsWith('data:') ||
     lower.startsWith('vbscript:') ||
-    lower.startsWith('file:')
+    lower.startsWith('file:') ||
+    lower.includes('javascript:') ||
+    lower.includes('vbscript:') ||
+    lower.includes('data:text/html')
   ) {
     return '#';
   }

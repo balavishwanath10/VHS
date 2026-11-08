@@ -45,8 +45,9 @@ export const renderInlineTokens = (tokens) => {
           <img
             key={`img-${idx}`}
             src={token.url}
-            alt={token.alt}
+            alt={token.alt || 'Post image'}
             className="markdown-img"
+            loading="lazy"
           />
         );
       default:
