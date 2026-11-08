@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Tag from '../models/Tag.js';
 import Post from '../models/Post.js';
+import protect from '../middleware/auth.js';
 
 const router = Router();
 
@@ -77,6 +78,65 @@ router.get('/:slug/posts', async (req, res, next) => {
       },
       count: posts.length,
       posts,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route   POST /api/tags
+ * @desc    Create a new tag (or return existing if duplicate)
+ * @access  Protected (Requires Bearer JWT)
+ */
+router.post('/', protect, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({
+        error: {
+          message: 'Tag name is required',
+        },
+      });
+    }
+
+    const trimmedName = name.trim().toLowerCase();
+    const slug =
+      trimmedName
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'tag';
+
+    // Prevent duplicate tags
+    let tag = await Tag.findOne({
+      $or: [{ name: trimmedName }, { slug }],
+    });
+
+    if (tag) {
+      return res.status(200).json({
+        message: 'Tag already exists',
+        tag: {
+          _id: tag._id,
+          name: tag.name,
+          slug: tag.slug,
+          postCount: 0,
+        },
+      });
+    }
+
+    tag = await Tag.create({
+      name: trimmedName,
+      slug,
+    });
+
+    return res.status(201).json({
+      message: 'Tag created successfully',
+      tag: {
+        _id: tag._id,
+        name: tag.name,
+        slug: tag.slug,
+        postCount: 0,
+      },
     });
   } catch (error) {
     next(error);

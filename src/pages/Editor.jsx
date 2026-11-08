@@ -22,6 +22,8 @@ export const Editor = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('write'); // 'write' or 'preview'
+  const [newTagName, setNewTagName] = useState('');
+  const [creatingTag, setCreatingTag] = useState(false);
 
   // Load available tags on mount
   useEffect(() => {
@@ -88,6 +90,42 @@ export const Editor = () => {
     setSelectedTags((prev) =>
       prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
     );
+  };
+
+  // Create a new tag and automatically select it
+  const handleCreateTag = async (e) => {
+    e.preventDefault();
+    if (!newTagName || !newTagName.trim() || submitting || creatingTag) return;
+
+    setCreatingTag(true);
+    setError(null);
+
+    try {
+      const res = await api.post('/tags', { name: newTagName.trim() });
+      const createdTag = res.data.tag;
+
+      if (createdTag) {
+        setAvailableTags((prev) => {
+          if (prev.some((t) => t._id === createdTag._id)) return prev;
+          return [...prev, createdTag];
+        });
+
+        setSelectedTags((prev) => {
+          if (prev.includes(createdTag._id)) return prev;
+          return [...prev, createdTag._id];
+        });
+
+        setNewTagName('');
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.error?.message ||
+          err.message ||
+          'Failed to create tag'
+      );
+    } finally {
+      setCreatingTag(false);
+    }
   };
 
   // Submit post (as draft or published)
@@ -290,6 +328,27 @@ export const Editor = () => {
               })}
             </div>
           )}
+
+          {/* Create New Tag Inline */}
+          <div className="new-tag-inline-form" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              className="form-input"
+              style={{ maxWidth: '240px', padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+              placeholder="Create new tag (e.g. react)..."
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              disabled={submitting || creatingTag}
+            />
+            <button
+              type="button"
+              onClick={handleCreateTag}
+              className="btn btn-secondary btn-sm"
+              disabled={submitting || creatingTag || !newTagName.trim()}
+            >
+              {creatingTag ? 'Adding...' : '+ Add Tag'}
+            </button>
+          </div>
         </div>
 
         {/* Tab Controls: Write vs Preview */}
