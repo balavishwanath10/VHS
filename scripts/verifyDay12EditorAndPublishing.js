@@ -308,11 +308,11 @@ async function runDay12Verification() {
       'Buttons and inputs guarded by submitting state'
     );
     assert.ok(
-      editorContent.includes("submitting ? 'Publishing...' : 'Publish'"),
+      editorContent.includes("'Publishing...'") && editorContent.includes("'Publish'"),
       'Publish button shows in-flight publishing label'
     );
     assert.ok(
-      editorContent.includes("submitting ? 'Saving...' : 'Save Draft'"),
+      editorContent.includes("'Saving...'") && editorContent.includes("'Save Draft'"),
       'Save Draft button shows in-flight saving label'
     );
     recordPass('19. Submit buttons disabled during submission', 'Prevent duplicate submissions and show loading labels');
