@@ -37,6 +37,14 @@ export function App() {
             <Route path="/post/:slug" element={<PostDetail />} />
             <Route path="/tag/:slug" element={<TagPosts />} />
             <Route
+              path="/editor"
+              element={
+                <ProtectedRoute>
+                  <Editor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/editor/new"
               element={
                 <ProtectedRoute>
