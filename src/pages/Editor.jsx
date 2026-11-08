@@ -15,6 +15,7 @@ export const Editor = () => {
   const [coverImage, setCoverImage] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
+  const [postStatus, setPostStatus] = useState('draft');
 
   const [loadingPost, setLoadingPost] = useState(isEditing);
   const [loadingTags, setLoadingTags] = useState(true);
@@ -60,6 +61,7 @@ export const Editor = () => {
           setTitle(post.title || '');
           setContent(post.content || '');
           setCoverImage(post.coverImage || '');
+          setPostStatus(post.status || 'draft');
           if (Array.isArray(post.tags)) {
             setSelectedTags(
               post.tags.map((t) => (typeof t === 'object' ? t._id : t))
@@ -157,11 +159,36 @@ export const Editor = () => {
     );
   }
 
+  if (isEditing && error && !title) {
+    return (
+      <div className="container" style={{ padding: '3rem 1rem' }}>
+        <div className="card text-center">
+          <h2>Unable to Load Story</h2>
+          <p className="subtitle">{error}</p>
+          <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container editor-container">
       <header className="page-header editor-header">
         <div>
-          <h1>{isEditing ? 'Edit Story' : 'Create New Story'}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <h1>{isEditing ? 'Edit Story' : 'Create New Story'}</h1>
+            {isEditing && (
+              <span
+                className={`badge ${
+                  postStatus === 'published' ? 'badge-published' : 'badge-draft'
+                }`}
+              >
+                {postStatus === 'published' ? 'Published' : 'Draft'}
+              </span>
+            )}
+          </div>
           <p className="subtitle">
             Write in Markdown with live preview and syntax highlighting.
           </p>
@@ -177,7 +204,11 @@ export const Editor = () => {
             className="btn btn-secondary"
             disabled={submitting}
           >
-            {submitting ? 'Saving...' : 'Save Draft'}
+            {submitting
+              ? 'Saving...'
+              : isEditing && postStatus === 'published'
+              ? 'Save as Draft'
+              : 'Save Draft'}
           </button>
           <button
             type="button"
@@ -185,7 +216,11 @@ export const Editor = () => {
             className="btn btn-primary"
             disabled={submitting}
           >
-            {submitting ? 'Publishing...' : 'Publish'}
+            {submitting
+              ? 'Publishing...'
+              : isEditing && postStatus === 'published'
+              ? 'Update Story'
+              : 'Publish'}
           </button>
         </div>
       </header>
