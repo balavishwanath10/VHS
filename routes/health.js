@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import connectDB, { getLastDbError } from '../config/db.js';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
  * @desc    Health check endpoint for API and database connectivity
  * @access  Public
  */
-router.get('/health', (req, res) => {
+router.get('/health', async (req, res) => {
   const dbStatusMap = {
     0: 'disconnected',
     1: 'connected',
@@ -16,7 +17,17 @@ router.get('/health', (req, res) => {
     3: 'disconnecting',
   };
 
-  const dbState = mongoose.connection.readyState;
+  let dbState = mongoose.connection.readyState;
+  if (dbState === 0) {
+    try {
+      await connectDB();
+      dbState = mongoose.connection.readyState;
+    } catch (_) {
+      // Handled safely
+    }
+  }
+
+  const lastErr = getLastDbError();
 
   res.status(200).json({
     status: 'ok',
@@ -26,6 +37,7 @@ router.get('/health', (req, res) => {
     database: {
       status: dbStatusMap[dbState] || 'unknown',
       connected: dbState === 1,
+      ...(dbState !== 1 && lastErr ? { note: lastErr } : {}),
     },
   });
 });

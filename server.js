@@ -62,10 +62,29 @@ if (!isProduction) {
 // Centralized error handling middleware
 app.use(errorHandler);
 
-// Attempt database connection without crashing application if URI is not yet configured
-connectDB().catch((err) => {
-  console.warn(`[MongoDB] Initial connection not established: ${err.message}`);
-});
+import mongoose from 'mongoose';
+
+// Attempt database connection with periodic retry if initial connection fails
+const initDbWithRetry = async () => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.warn(`[MongoDB] Initial connection not established: ${err.message}. Retrying every 5s...`);
+    const retryInterval = setInterval(async () => {
+      if (mongoose.connection.readyState === 1) {
+        clearInterval(retryInterval);
+        return;
+      }
+      try {
+        await connectDB();
+        clearInterval(retryInterval);
+      } catch (_) {
+        // Will retry on next tick
+      }
+    }, 5000);
+  }
+};
+initDbWithRetry();
 
 // Start unified server
 const server = app.listen(PORT, () => {

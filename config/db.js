@@ -14,6 +14,10 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
+let lastDbError = null;
+
+export const getLastDbError = () => lastDbError;
+
 /**
  * Connect to MongoDB database using Mongoose
  * Reads connection URI from process.env.MONGODB_URI
@@ -24,12 +28,14 @@ const connectDB = async () => {
 
   if (!uri || uri === 'your_mongodb_connection_string') {
     const errorMsg = 'MongoDB URI is not configured in environment variables (process.env.MONGODB_URI).';
+    lastDbError = errorMsg;
     console.error(`[MongoDB] Connection Failed: ${errorMsg}`);
     throw new Error(errorMsg);
   }
 
   try {
     const conn = await mongoose.connect(uri);
+    lastDbError = null;
     console.log(`[MongoDB] Connected successfully to host: ${conn.connection.host}`);
 
     mongoose.connection.on('error', (err) => {
@@ -42,7 +48,19 @@ const connectDB = async () => {
 
     return conn;
   } catch (error) {
-    console.error(`[MongoDB] Connection Failed: ${error.message}`);
+    let sanitized = error.message;
+    if (sanitized.includes('bad auth') || sanitized.includes('Authentication failed')) {
+      sanitized = 'Authentication failed (verify database username and password in MONGODB_URI)';
+    } else if (
+      sanitized.includes('Could not connect') ||
+      sanitized.includes('timed out') ||
+      sanitized.includes('whitelist') ||
+      sanitized.includes('ETIMEDOUT')
+    ) {
+      sanitized = 'Network connection timed out (verify MongoDB Atlas Network Access allows Render outbound IPs)';
+    }
+    lastDbError = sanitized;
+    console.error(`[MongoDB] Connection Failed: ${sanitized}`);
     throw error;
   }
 };
