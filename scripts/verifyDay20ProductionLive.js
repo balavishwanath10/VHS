@@ -187,6 +187,7 @@ async function execute() {
     );
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.data.post.status, 'published');
+    testPostSlug = res.data.post.slug;
   });
 
   await runCheck('13. Published post appears in public feed and is readable by slug', async () => {
